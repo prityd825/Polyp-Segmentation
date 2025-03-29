@@ -1,0 +1,155 @@
+# This Python 3 environment comes with many helpful analytics libraries installed
+# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python
+# For example, here's several helpful packages to load
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+
+# Input data files are available in the read-only "../input/" directory
+# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
+
+import os
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+
+# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using "Save & Run All" 
+# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session
+
+
+
+import os
+import time
+import cv2
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.nn.functional as F
+from torch.utils.data import DataLoader, Dataset
+from sklearn.model_selection import train_test_split
+from albumentations import HorizontalFlip, VerticalFlip, Rotate
+from tqdm import tqdm
+import imageio
+from torchvision import models  
+from tqdm import tqdm
+from torchvision.models import vit_b_16
+
+
+
+
+def augment_data(images, masks, save_path, augment=True):
+    size = (224, 224)  
+    # resize all images and masks to this size
+
+    for idx, (x, y) in tqdm(enumerate(zip(images, masks)), total=len(images)):
+        """ Extracting the name from the image path """
+        name = x.split("/")[-1].split(".")[0]
+
+        """ Reading image and mask """
+        x = cv2.imread(x, cv2.IMREAD_COLOR)  # read image
+        y = imageio.mimread(y)[0]  # read mask
+
+        if augment:
+            # apply augmentations
+
+            aug = HorizontalFlip(p=1.0)
+            augmented = aug(image=x, mask=y)
+            x1 = augmented["image"]
+            y1 = augmented["mask"]
+
+            aug = VerticalFlip(p=1.0)
+            augmented = aug(image=x, mask=y)
+            x2 = augmented["image"]
+            y2 = augmented["mask"]
+
+             aug = Rotate(limit=45, p=1.0)
+            augmented = aug(image=x, mask=y)
+            x3 = augmented["image"]
+            y3 = augmented["mask"]
+
+            # list of original and augmented images and masks
+            X = [x, x1, x2, x3]
+            Y = [y, y1, y2, y3]
+        else:
+            # save the original image and mask
+            X = [x]
+            Y = [y]
+
+        # save images and masks
+        index = 0
+        for i, m in zip(X, Y):
+            # resize images and masks
+            i = cv2.resize(i, size)
+            m = cv2.resize(m, size)
+
+            # filenames for the augmented data
+            tmp_image_name = f"{name}_{index}.png"
+            tmp_mask_name = f"{name}_{index}.png"
+
+            # to save images and masks
+            image_path = os.path.join(save_path, "image", tmp_image_name)
+            mask_path = os.path.join(save_path, "mask", tmp_mask_name)
+
+
+            # save images and masks to the directory
+            cv2.imwrite(image_path, i)
+            cv2.imwrite(mask_path, m)
+
+            index += 1
+
+
+            
+if __name__ == "__main__":
+    """ Seeding for reproducibility """
+    np.random.seed(42)
+
+    """ Directories for images and masks """
+    image_dir = "/kaggle/input/multi-center-polypbd/PolypDB/PolypDB_modality_wise/WLI/images"
+    mask_dir = "/kaggle/input/multi-center-polypbd/PolypDB/PolypDB_modality_wise/WLI/masks"
+    save_path_train = "/kaggle/working/augmented_data/train"
+    save_path_test = "/kaggle/working/augmented_data/test"
+
+    os.makedirs(os.path.join(save_path_train, "image"), exist_ok=True)
+    os.makedirs(os.path.join(save_path_train, "mask"), exist_ok=True)
+    os.makedirs(os.path.join(save_path_test, "image"), exist_ok=True)
+    os.makedirs(os.path.join(save_path_test, "mask"), exist_ok=True)
+
+
+image_paths = sorted([os.path.join(image_dir, img) for img in os.listdir(image_dir) if img.endswith('.jpg') or img.endswith('.png')])
+mask_paths = sorted([os.path.join(mask_dir, mask) for mask in os.listdir(mask_dir) if mask.endswith('.jpg') or mask.endswith('.png')])    
+   
+            
+from sklearn.model_selection import train_test_split
+train_x, test_x, train_y, test_y = train_test_split(image_paths, mask_paths, test_size=0.2, random_state=42)
+
+augment_data(train_x, train_y, save_path_train, augment=True)
+augment_data(test_x, test_y, save_path_test, augment=False)
+
+
+
+class PolypDB(Dataset):
+    def __init__(self, images_path, masks_path):
+        self.images_path = images_path
+        self.masks_path = masks_path
+        self.n_samples = len(images_path)
+        
+    def __getitem__(self, index):
+        """ Reading image """
+        image = cv2.imread(self.images_path[index], cv2.IMREAD_COLOR)
+        image = image / 255.0 
+        image = np.transpose(image, (2, 0, 1))
+        image = image.astype(np.float32)
+        image = torch.from_numpy(image)
+        
+        """ Reading masks """
+        mask = cv2.imread(self.masks_path[index], cv2.IMREAD_GRAYSCALE)
+        mask = mask / 255.0 
+        mask = np.expand_dims(mask, axis=0)
+        mask = mask.astype(np.float32)
+        mask = torch.from_numpy(mask)
+        
+        return image, mask
+    
+    def __len__(self):
+        return self.n_samples
