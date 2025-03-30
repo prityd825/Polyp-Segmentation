@@ -153,3 +153,142 @@ class PolypDB(Dataset):
     
     def __len__(self):
         return self.n_samples
+
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torchvision.models import vit_b_16
+
+# Example Encoder Block
+class encoder_block(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(encoder_block, self).__init__()
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+        )
+        self.pool = nn.MaxPool2d(2)
+
+    def forward(self, x):
+        skip = self.conv(x)
+        pooled = self.pool(skip)
+        return skip, pooled
+
+# Example Decoder Block
+class decoder_block(nn.Module):
+    def __init__(self, in_channels, out_channels):
+        super(decoder_block, self).__init__()
+        self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+            nn.BatchNorm2d(out_channels),
+            nn.ReLU(inplace=True),
+        )
+
+    def forward(self, inputs, skip):
+        x = self.up(inputs)
+        # Resize x to match the size of skip for concatenation
+        x = F.interpolate(x, size=skip.size()[2:], mode='bilinear', align_corners=False)
+        x = torch.cat([x, skip], dim=1)
+        x = self.conv(x)
+        return x
+
+# Main UNet Model with ViT
+class build_unet_with_vit(nn.Module):
+    def __init__(self):
+        super(build_unet_with_vit, self).__init__()
+
+        """ Encoder """
+        self.e1 = encoder_block(3, 64)
+        self.e2 = encoder_block(64, 128)
+        self.e3 = encoder_block(128, 256)
+        self.e4 = encoder_block(256, 512)
+
+        """ Conv layer to reduce channels from 512 to 3 for ViT """
+        self.channel_reduction = nn.Conv2d(512, 3, kernel_size=1)
+
+        """ Vision Transformer as Bottleneck """
+        self.vit_block = vit_b_16(pretrained=True)  # Load pre-trained ViT model
+
+        """ Fully Connected Layer to reshape ViT output """
+        self.fc = nn.Linear(1000, 1024 * 7 * 7)  # Project ViT output to required shape
+
+        """ Decoder """
+        self.d1 = decoder_block(1024, 512)
+        self.d2 = decoder_block(512, 256)
+        self.d3 = decoder_block(256, 128)
+        self.d4 = decoder_block(128, 64)
+
+        """ Classifier """
+        self.outputs = nn.Conv2d(64, 1, kernel_size=1, padding=0)
+        
+    def forward(self, inputs):
+        """ Encoder """
+        s1, p1 = self.e1(inputs)
+        s2, p2 = self.e2(p1)
+        s3, p3 = self.e3(p2)
+        s4, p4 = self.e4(p3)
+
+        """ Resize before Vision Transformer Bottleneck """
+        p4_resized = F.interpolate(p4, size=(224, 224), mode='bilinear', align_corners=False)
+
+        """ Reduce channels from 512 to 3 for ViT input """
+        p4_reduced = self.channel_reduction(p4_resized)
+
+        """ Vision Transformer Block """
+        vit_output = self.vit_block(p4_reduced)  # Output tensor of shape [batch_size, 1000]
+
+        """ Project and Reshape ViT output """
+        vit_output_projected = self.fc(vit_output)  # Shape: [batch_size, 1024 * 7 * 7]
+        vit_output_reshaped = vit_output_projected.view(vit_output.size(0), 1024, 7, 7)  # Shape: [batch_size, 1024, 7, 7]
+
+        """ Decoder """
+        d1 = self.d1(vit_output_reshaped, s4)
+        d2 = self.d2(d1, s3)
+        d3 = self.d3(d2, s2)
+        d4 = self.d4(d3, s1)
+
+        outputs = self.outputs(d4)
+
+        return outputs
+
+
+
+class DiceLoss(nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super(DiceLoss, self).__init__()
+
+    def forward(self, inputs, targets, smooth=1):
+        inputs = torch.sigmoid(inputs)  # Apply sigmoid activation
+        inputs = inputs.view(-1)
+        targets = targets.view(-1)
+
+        intersection = (inputs * targets).sum()
+        dice = (2. * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
+
+        return 1 - dice
+
+# Dice + Binary Cross-Entropy Loss
+class DiceBCELoss(nn.Module):
+    def __init__(self, weight=None, size_average=True):
+        super(DiceBCELoss, self).__init__()
+
+    def forward(self, inputs, targets, smooth=1):
+        inputs = torch.sigmoid(inputs)
+        inputs = inputs.view(-1)
+        targets = targets.view(-1)
+
+        intersection = (inputs * targets).sum()
+        dice_loss = 1 - (2. * intersection + smooth) / (inputs.sum() + targets.sum() + smooth)
+        bce = F.binary_cross_entropy(inputs, targets, reduction='mean')
+        dice_bce = bce + dice_loss
+
+        return dice_bce
