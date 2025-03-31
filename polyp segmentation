@@ -292,3 +292,41 @@ class DiceBCELoss(nn.Module):
         dice_bce = bce + dice_loss
 
         return dice_bce
+
+train_dataset = PolypDB(
+        images_path=sorted([os.path.join(save_path_train, "image", img) for img in os.listdir(os.path.join(save_path_train, "image"))]),
+        masks_path=sorted([os.path.join(save_path_train, "mask", mask) for mask in os.listdir(os.path.join(save_path_train, "mask"))])
+    )
+test_dataset = PolypDB(
+        images_path=sorted([os.path.join(save_path_test, "image", img) for img in os.listdir(os.path.join(save_path_test, "image"))]),
+        masks_path=sorted([os.path.join(save_path_test, "mask", mask) for mask in os.listdir(os.path.join(save_path_test, "mask"))])
+    )
+
+train_loader = DataLoader(train_dataset, batch_size=2, shuffle=True)
+test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+pretrained_model_path = "/kaggle/input/model-5/model_saves/modality5wli.pth"
+model = build_unet_with_vit().to(device)
+model.load_state_dict(torch.load(pretrained_model_path))
+model.train()
+
+model = build_unet_with_vit().to(device)  
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
+criterion = DiceBCELoss()
+loss_fn = DiceBCELoss()
+def iou_score(preds, targets, smooth=1):
+    preds = (preds > 0.5).float()  # Apply a threshold to get binary predictions
+    targets = targets.float()
+    
+    intersection = (preds * targets).sum()
+    union = preds.sum() + targets.sum() - intersection
+    
+    return (intersection + smooth) / (union + smooth)
+
+def epoch_time(start_time, end_time):
+    elapsed_time = end_time - start_time
+    elapsed_mins = int(elapsed_time // 60)
+    elapsed_secs = int(elapsed_time % 60)
+    return elapsed_mins, elapsed_secs
