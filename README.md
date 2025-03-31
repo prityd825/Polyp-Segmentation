@@ -22,7 +22,7 @@ The dataset is divided into:
 1. 80% Training Data
 2. 20% Testing Data
 
-### Data Augmentation (augment_data function)
+### Data Augmentation
 To improve the model's ability to generalize, the images and masks undergo the following augmentations:
 1. Horizontal Flip → Flips images left-right.
 2. Vertical Flip → Flips images upside-down.
