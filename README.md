@@ -60,8 +60,6 @@ Dice Score: 0.85 (with pretrained ViT)
 
 IoU Score: 0.76
 
-Pixel Accuracy: 92%
-
 Our model outperforms baseline methods, including traditional CNN-based UNet, achieving superior segmentation performance across various modalities and centers.
 
 
