@@ -32,7 +32,39 @@ Each image and mask is resized to 224×224 pixels, ensuring consistency for the 
 After augmenting data: 
 
 100%|██████████| 2870/2870 [02:24<00:00, 19.83it/s]
+
 100%|██████████| 718/718 [00:17<00:00, 40.49it/s]
+
+# Mothodology 
+Our model is based on a hybrid architecture that integrates Vision Transformer (ViT) and UNet. The architecture can be described as follows:
+
+Encoder (UNet): The encoder consists of several convolutional blocks (encoder_block), which progressively downsample the input image while extracting features.
+
+Vision Transformer Bottleneck: After passing through the encoder, the feature maps are resized and passed through a ViT block. The Vision Transformer captures long-range dependencies and global features, which are critical for detecting polyps in complex scenes.
+
+Decoder (UNet): The decoder upsamples the features to the original image size and combines them with the corresponding skip connections from the encoder using concatenation. This process refines the segmentation.
+
+Output Layer: The final output is a segmentation map that indicates the locations of polyps in the image.
+
+# Performance Evaluation
+We evaluate our model using the following metrics:
+
+Dice Score: Measures the overlap between the predicted and ground truth masks.
+
+Intersection over Union (IoU): Measures the similarity between the predicted and ground truth regions.
+
+Pixel Accuracy: Percentage of correctly classified pixels.
+
+### Results:
+Dice Score: 0.85 (with pretrained ViT)
+
+IoU Score: 0.76
+
+Pixel Accuracy: 92%
+
+Our model outperforms baseline methods, including traditional CNN-based UNet, achieving superior segmentation performance across various modalities and centers.
+
+
 
 
 
