@@ -56,9 +56,9 @@ Intersection over Union (IoU): Measures the similarity between the predicted and
 Pixel Accuracy: Percentage of correctly classified pixels.
 
 ### Results:
-Dice Score: 0.85 (with pretrained ViT)
 
-IoU Score: 0.76
+IoU Score: 0.771 [Pretrained = "True"]
+IoU Score: 0.76 [Pretrained = "False"]
 
 Our model outperforms baseline methods, including traditional CNN-based UNet, achieving superior segmentation performance across various modalities and centers.
 
