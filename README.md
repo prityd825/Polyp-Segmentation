@@ -58,6 +58,7 @@ Pixel Accuracy: Percentage of correctly classified pixels.
 ### Results:
 
 IoU Score: 0.771 [Pretrained = "True"]
+
 IoU Score: 0.76 [Pretrained = "False"]
 
 
