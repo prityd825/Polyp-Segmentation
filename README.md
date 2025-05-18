@@ -60,6 +60,8 @@ Pixel Accuracy: Percentage of correctly classified pixels.
 IoU Score: 0.771 [Pretrained = "True"]
 
 IoU Score: 0.76 [Pretrained = "False"]
+With Custom weight IOU score : 0.802
+With pretrain without Aumentation IOU : 0.966
 
 
 
