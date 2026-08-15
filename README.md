@@ -5,7 +5,8 @@
 [![Code DOI](https://img.shields.io/badge/Code-Zenodo-green)](https://doi.org/10.5281/zenodo.18595415)
 [![Dataset](https://img.shields.io/badge/Data-Zenodo-lightgrey)](https://doi.org/10.5281/zenodo.18633877)
 
-This repository contains the official implementation of the research paper: **"A Novel Hybrid Deep Learning Model using U-net and Vision Transformer for Polyp Segmentation in medical imaging"**.
+This repository contains the official implementation of the research paper: 
+**"A Novel Hybrid Deep Learning Model using U-net and Vision Transformer for Polyp Segmentation in medical imaging"**.
 
 ## 📌 Abstract
 Early detection of polyps is critical for colorectal cancer prevention. We propose a hybrid architecture that integrates **U-Net** as an encoder for local feature extraction and **Vision Transformer (ViT)** as a bottleneck module for global contextual information. The model is trained on the multicenter **PolypDB** dataset.
@@ -32,6 +33,7 @@ The study uses **PolypDB**, which includes 3,934 images from multiple modalities
 | **Hybrid Model (Pretrained + Augmentation)** | **0.966** |
 | Hybrid Model (Custom Weight) | 0.802 |
 | Hybrid Model (Base) | 0.771 |
+
 
 ## 💻 How to Run
 1. **Clone the repository:**
