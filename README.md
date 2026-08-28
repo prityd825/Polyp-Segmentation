@@ -431,8 +431,6 @@ The model is **not a clinical diagnostic system** and should not be used for rea
 
 **Prity Rani Das**
 
-Software Engineer | AI & Medical Imaging Research Enthusiast
-
 * **GitHub:** https://github.com/prityd825
 
 ---
