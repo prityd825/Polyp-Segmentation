@@ -298,39 +298,6 @@ This configuration initializes the model without pretrained Transformer weights.
 
 ---
 
-# 💻 Installation
-
-Clone the repository:
-
-```bash
-git clone https://github.com/prityd825/Polyp-Segmentation.git
-cd Polyp-Segmentation
-```
-
-Create a virtual environment:
-
-### Windows
-
-```bash
-python -m venv venv
-venv\Scripts\activate
-```
-
-### Linux / macOS
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-Install the required dependencies:
-
-```bash
-pip install torch torchvision opencv-python albumentations numpy scikit-learn imageio matplotlib tqdm
-```
-
----
-
 # 🚀 How to Run
 
 This repository follows a **notebook-based research workflow**.
@@ -419,14 +386,6 @@ This project is an experimental research implementation and has several limitati
 
 ---
 
-# 📄 Research Disclaimer
-
-This repository is intended for **research and educational purposes only**.
-
-The model is **not a clinical diagnostic system** and should not be used for real-world medical diagnosis or treatment decisions without additional clinical validation and regulatory evaluation.
-
----
-
 # 👩‍💻 Author
 
 **Prity Rani Das**
@@ -444,5 +403,10 @@ If you use this work, please consider citing the associated research paper, code
 * **Dataset:** https://doi.org/10.5281/zenodo.18633877
 
 ---
+# 📄 Research Disclaimer
+
+This repository is intended for **research and educational purposes only**.
+
+The model is **not a clinical diagnostic system** and should not be used for real-world medical diagnosis or treatment decisions without additional clinical validation and regulatory evaluation.
 
 ⭐ **If you find this project useful, please consider giving the repository a star!**
