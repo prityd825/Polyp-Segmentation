@@ -86,7 +86,7 @@ Preliminary evaluation on the current 617-image test set:
 
 ## Research Resources
 
-- **Research Paper:** https://doi.org/10.5281/zenodo.18591131
+- **Research Paper:** https://zenodo.org/records/23702821
 - **Code:** https://doi.org/10.5281/zenodo.18595415
 - **Dataset:** https://doi.org/10.5281/zenodo.18633877
 - **GitHub:** https://github.com/prityd825/Polyp-Segmentation
